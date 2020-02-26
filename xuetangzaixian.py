@@ -100,9 +100,13 @@ class xuetangzaixian:
 
     def start(self):
         self.openurl()
+        print("open login page successful!")
         self.login()
+        print("login page successful!")
         self.opencuorse()
+        print("opencuorse page successful!")
         self.watchvideo()
+        print("watchvideo finish")
         self.driver.close()
-        print("finish")
+        print("driver exit normally")
         return True
