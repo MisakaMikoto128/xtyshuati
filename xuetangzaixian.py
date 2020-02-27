@@ -17,6 +17,7 @@ class xuetangzaixian:
         opt.add_argument('--disable-gpu')  # 谷歌文档提到需要加上这个属性来规避bug
         opt.add_argument('--hide-scrollbars')  # 隐藏滚动条，应对一些特殊页面
         opt.add_argument('blink-settings=imagesEnabled=false')  # 不加载图片，提升运行速度
+        #opt.add_argument('executable_path="./chromedriver"') # 手动指定使用的浏览器位置
         if(visible == False):
             opt.add_argument('--headless')  # 浏览器不提供可视化界面。Linux下如果系统不支持可视化不加这条会启动失败
         # opt.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" # 手动指定使用的浏览器位置
@@ -55,7 +56,7 @@ class xuetangzaixian:
                 "//xt-inner[@class='xt_video_player_controls_inner']/xt-progress/xt-progressinner/xt-currenttime").get_attribute(
                 'style')
             time.sleep(fre)
-            print(now)
+            print("\rProgress:" + ("" + now).split(':')[-1].strip(';'))
             if (now == "width: 100%;"):
                 break
         #   该方法用来确认元素是否存在，如果存在返回flag=true，否则返回false
@@ -100,6 +101,7 @@ class xuetangzaixian:
                 break
 
     def start(self):
+        print("start")
         self.openurl()
         print("open login page successful!")
         self.login()
