@@ -50,13 +50,14 @@ class xuetangzaixian:
         # driver.find_element_by_xpath("//div[@class='singleCourseMin']/div[@class='singleCourseBox']/div[@class='singleCourseMin']/div/div[1]").click()
         self.driver.find_element_by_xpath("//div[text()='{}']".format(self.coursename)).click()  # 点击课程
 
+    #等待视频播放
     def WaitVideo(self,fre=0.5, timeout=10):
         while True:
             now = self.driver.find_element_by_xpath(
                 "//xt-inner[@class='xt_video_player_controls_inner']/xt-progress/xt-progressinner/xt-currenttime").get_attribute(
                 'style')
             time.sleep(fre)
-            print("\rProgress:" + ("" + now).split(':')[-1].strip(';'))
+            print("\rProgress:" + ("" + now).split(':')[-1].strip(';'))#进度显示
             if (now == "width: 100%;"):
                 break
         #   该方法用来确认元素是否存在，如果存在返回flag=true，否则返回false
@@ -102,10 +103,11 @@ class xuetangzaixian:
 
     def start(self):
         print("start")
+        print("open login page")
         self.openurl()
-        print("open login page successful!")
+        print("login page successfully!")
         self.login()
-        print("login page successful!")
+        print("login successfully!")
         self.opencuorse()
         print("opencuorse page successful!")
         self.watchvideo()
@@ -113,3 +115,11 @@ class xuetangzaixian:
         self.driver.close()
         print("driver exit normally")
         return True
+    
+    def quicklogin(self):
+        print("start")
+        print("open login page")
+        self.openurl()
+        print("login page successfully!")
+        self.login()
+        print("login successfully!")
