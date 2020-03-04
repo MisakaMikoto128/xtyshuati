@@ -1,6 +1,12 @@
 #coding=utf-8
+import os
+
 from selenium import webdriver
 import time
+import json
+
+#@林
+#@日期:2020年3月2日
 
 class xuetangzaixian:
     driver = None
@@ -23,7 +29,7 @@ class xuetangzaixian:
         # opt.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" # 手动指定使用的浏览器位置
         self.driver = webdriver.Chrome(options=opt)  # 创建浏览器对象
         self.driver.set_page_load_timeout(30)
-        self.driver.implicitly_wait(10)  # seconds
+        self.driver.implicitly_wait(15)  # seconds
 
     def openurl(self):
         try:
@@ -32,7 +38,23 @@ class xuetangzaixian:
             print(e)
             raise e
 
-    def login(self):
+    #登录
+    def login(self,cookiename="cookies.json"):
+        if(self.is_cookiefile_valid(cookiename)):
+            self.load_cokie()
+            time.sleep(1)
+            self.driver.refresh()#记得刷新一下才会显示登录
+            time.sleep(1)
+        if(self.is_cookie_valid()):
+                return
+        else:
+            self.pwdlogin()#密码登录
+            time.sleep(2)#太快cookie没有加载完成，保存不了
+            self.save_cookie_json()
+
+
+    #密码登录
+    def pwdlogin(self):
         # 登录
         self.driver.find_element_by_xpath("//span[@class='header-login--btnlogin']").click()  # 点击登录按钮
         self.driver.find_element_by_xpath("//div[@class='scavengTip']/img").click()  # 账号密码登录
@@ -57,7 +79,7 @@ class xuetangzaixian:
                 "//xt-inner[@class='xt_video_player_controls_inner']/xt-progress/xt-progressinner/xt-currenttime").get_attribute(
                 'style')
             time.sleep(fre)
-            print("\rProgress:" + ("" + now).split(':')[-1].strip(';'))#进度显示
+            print("\rProgress:" + ("" + now).split(':')[-1].strip(';'), end = '')#进度显示
             if (now == "width: 100%;"):
                 break
         #   该方法用来确认元素是否存在，如果存在返回flag=true，否则返回false
@@ -71,7 +93,8 @@ class xuetangzaixian:
             flag = False
             return flag
 
-    def watchvideo(self):
+    #N:从第N个页面开始
+    def watchvideo(self,N = 1):
         active_lable = self.driver.find_element_by_xpath(
             "//div[@class='listScroll']/ul[@class='first active']/li[@class='title']")
         self.driver.execute_script("arguments[0].click();", active_lable)  # 先关闭展开的章节标签
@@ -82,9 +105,12 @@ class xuetangzaixian:
         self.driver.find_element_by_xpath("//div[@class='listScroll']/ul[1]/li[2]").click()# 点击第一个视频
         time.sleep(1)  # 加载等待
 
+        #跳转到第N个页面
+        self.goto_next_item(N)
+
         while True:
             if (self.is_element_exist_by_xpath("//div[@class='lesson_right content_right']")):
-                print("this is video")
+                print("\nthis is video")
                 video_speed = self.driver.find_element_by_xpath("//li[@data-speed='2'][@keyt='2.00']")
                 self.driver.execute_script("arguments[0].click();", video_speed)
                 voice = self.driver.find_element_by_xpath(
@@ -92,15 +118,73 @@ class xuetangzaixian:
                 self.driver.execute_script("arguments[0].click();", voice)
                 self.WaitVideo(1)
             elif (self.is_element_exist_by_xpath("//div[@class='courseAction_lesson_left lesson_left']")):
-                print("this is paper")
+                print("\nthis is paper")
 
             # 点击下一篇
-            self.driver.find_element_by_xpath("//div[@class='control']/p[@class='next']").click()
+            self.goto_next_item()
             time.sleep(3)  # 加载等待
-            if (self.driver.find_element_by_xpath("//div[@class='control']/p[@class='next']").find_element_by_xpath(
-                    'span').text == "下一单元：无"):
+            if (self.have_next_item() == False):
                 break
 
+    # 点击下一篇 N：点击几下
+    def goto_next_item(self,N = 1):
+        for i in range(N):
+            self.driver.find_element_by_xpath("//div[@class='control']/p[@class='next']").click()
+            time.sleep(3)  #加载等待
+
+    #判断是否还有下一 返回值：有：True 无：False
+    def have_next_item(self):
+        if (self.driver.find_element_by_xpath("//div[@class='control']/p[@class='next']").find_element_by_xpath(
+                'span').text == "下一单元：无"):
+            return False
+        else:
+            return True
+
+    #设置开始页面序号
+    def setbegin(self,N = 1):
+        self.begin = N
+
+    # 用于保存Cookie信息
+    def save_cookie_json(self,cookiename="cookies.json"):
+        with open(cookiename, 'w') as cookief:
+            # 将cookies保存为json格式
+            cookief.write(json.dumps(self.driver.get_cookies()))
+
+    #z载入已经保存的Cookie信息
+    def load_cokie(self,cookiename="cookies.json"):
+        with open(cookiename, 'r') as cookief:
+            # 使用json读取cookies 注意读取的是文件 所以用load而不是loads
+            cookieslist = json.load(cookief)
+
+        # 方法1 将expiry类型变为int
+        for cookie in cookieslist:
+            # 并不是所有cookie都含有expiry 所以要用dict的get方法来获取
+            if isinstance(cookie.get('expiry'), float):
+                cookie['expiry'] = int(cookie['expiry'])
+            self.driver.add_cookie(cookie)
+
+    #判断载入的cookie对当前网站是否有效 返回值：True/False
+    def is_cookie_valid(self):
+        if(self.is_element_exist_by_xpath("//span[@class='header-login--btnlogin']")):
+            return False
+        else:
+            return True
+
+    #判断是否保存了cookie文件  False:文件不存在/文件为空
+    def is_cookiefile_valid(self, cookiename="cookies.json"):
+        try:
+            f = open(cookiename)
+            if(os.path.getsize(cookiename) == 0):  #判断文件是否为空
+                f.close()
+                return False
+            f.close()
+            return True
+        except FileNotFoundError:
+            return False
+        except PermissionError:
+            return False
+
+    #入口
     def start(self):
         print("start")
         print("open login page")
@@ -110,16 +194,18 @@ class xuetangzaixian:
         print("login successfully!")
         self.opencuorse()
         print("opencuorse page successful!")
-        self.watchvideo()
+        self.save_cookie_json()
+        self.watchvideo(self.begin)
         print("watchvideo finish")
         self.driver.close()
         print("driver exit normally")
         return True
-    
+
+    #快速登录
     def quicklogin(self):
         print("start")
         print("open login page")
         self.openurl()
         print("login page successfully!")
-        self.login()
+        self.pwdlogin()
         print("login successfully!")
