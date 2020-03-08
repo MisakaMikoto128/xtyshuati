@@ -203,7 +203,7 @@ class xuetangzaixian:
         self.driver.implicitly_wait(15)  # seconds
 
     #入口
-    def begin(self):
+    def run(self):
         self.driver_init()
         print("start")
         print("open login page")
