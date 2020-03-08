@@ -10,6 +10,8 @@ import json
 #@林
 #@日期:2020年3月2日
 
+# selenium中，当我们一次性要爬取很多url时，当get()页面超时后，捕获异常后，还需要继续get()其他url页面，但是当你直接调用get()方法时，
+# 会报异常。此时解决方法有两种，一种是重启浏览器，另一种是浏览器保持有两个tag页，当超时是切换到另一个tag（注意：tag页是很容易加载的）
 
 #全局有一个15s的implicit等待
 class xuetangzaixian:
@@ -38,10 +40,10 @@ class xuetangzaixian:
             time.sleep(1)
         if(self.is_cookie_valid()):
                 return
-        # else:
-        #     self.pwdlogin()#密码登录
-        #     time.sleep(2)#太快cookie没有加载完成，保存不了
-        #     self.save_cookie_json()
+        else:
+            self.pwdlogin()#密码登录
+            time.sleep(2)#太快cookie没有加载完成，保存不了
+            self.save_cookie_json()
 
 
     #密码登录
@@ -55,6 +57,11 @@ class xuetangzaixian:
             self.password)  # 输入密码
         time.sleep(1)  # 加载等待
         self.driver.find_element_by_xpath("//div[@class='cliBtn buttonhoverblank ']").click()  # 点击登录按钮
+        try:
+            while (not (self.is_element_exist_by_xpath("//img[@class = 'img-circle el-popover__reference']"))):
+                pass
+        except Exception as e:
+            print(e)
 
     def opencuorse(self):
         element = WebDriverWait(self.driver, 10).until(
