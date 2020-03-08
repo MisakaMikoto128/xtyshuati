@@ -1,35 +1,26 @@
 #coding=utf-8
 import os
-
 from selenium import webdriver
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 import time
 import json
 
 #@林
 #@日期:2020年3月2日
 
+
+#全局有一个15s的implicit等待
 class xuetangzaixian:
     driver = None
-    def __init__(self, loginurl, username, password, coursename, visible):
+    def __init__(self, loginurl, username, password, coursename,visible = True,begin = 1):
         self.loginurl = loginurl
         self.username = username
         self.password = password
         self.coursename = coursename
         self.visible = visible
-        # 配置浏览器
-        opt = webdriver.ChromeOptions()  # 选择浏览器
-        opt.add_argument('--no-sandbox')  # 解决DevToolsActivePort文件不存在的报错
-        opt.add_argument('window-size=1920x3000')  # 设置浏览器分辨率
-        opt.add_argument('--disable-gpu')  # 谷歌文档提到需要加上这个属性来规避bug
-        opt.add_argument('--hide-scrollbars')  # 隐藏滚动条，应对一些特殊页面
-        opt.add_argument('blink-settings=imagesEnabled=false')  # 不加载图片，提升运行速度
-        #opt.add_argument('executable_path="./chromedriver"') # 手动指定使用的浏览器位置
-        if(visible == False):
-            opt.add_argument('--headless')  # 浏览器不提供可视化界面。Linux下如果系统不支持可视化不加这条会启动失败
-        # opt.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" # 手动指定使用的浏览器位置
-        self.driver = webdriver.Chrome(options=opt)  # 创建浏览器对象
-        self.driver.set_page_load_timeout(30)
-        self.driver.implicitly_wait(15)  # seconds
+        self.begin = begin
 
     def openurl(self):
         try:
@@ -47,10 +38,10 @@ class xuetangzaixian:
             time.sleep(1)
         if(self.is_cookie_valid()):
                 return
-        else:
-            self.pwdlogin()#密码登录
-            time.sleep(2)#太快cookie没有加载完成，保存不了
-            self.save_cookie_json()
+        # else:
+        #     self.pwdlogin()#密码登录
+        #     time.sleep(2)#太快cookie没有加载完成，保存不了
+        #     self.save_cookie_json()
 
 
     #密码登录
@@ -66,10 +57,18 @@ class xuetangzaixian:
         self.driver.find_element_by_xpath("//div[@class='cliBtn buttonhoverblank ']").click()  # 点击登录按钮
 
     def opencuorse(self):
-        time.sleep(1)  # 加载等待
-        self.driver.find_element_by_xpath("//div[@class='header-login']").click()  # 点击头像
-        self.driver.find_element_by_class_name('list').find_element_by_xpath('li[1]').click()  # 点击我的课程
+        element = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "header-login"))
+        )
+        element.click() # 点击头像
+        #self.driver.find_element_by_xpath("//div[@class='header-login']").click()  # 点击头像
+        element = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "list"))
+        )
+        element.find_element_by_xpath('li[1]').click()  # 点击我的课程
+        # self.driver.find_element_by_class_name('list').find_element_by_xpath('li[1]').click()  # 点击我的课程
         # driver.find_element_by_xpath("//div[@class='singleCourseMin']/div[@class='singleCourseBox']/div[@class='singleCourseMin']/div/div[1]").click()
+
         self.driver.find_element_by_xpath("//div[text()='{}']".format(self.coursename)).click()  # 点击课程
 
     #等待视频播放
@@ -85,13 +84,8 @@ class xuetangzaixian:
         #   该方法用来确认元素是否存在，如果存在返回flag=true，否则返回false
 
     def is_element_exist_by_xpath(self,element):
-        flag = True
-        try:
-            self.driver.find_element_by_xpath(element)
-            return flag
-        except:
-            flag = False
-            return flag
+        return EC.invisibility_of_element_located((By.XPATH,element))
+
 
     #N:从第N个页面开始
     def watchvideo(self,N = 1):
@@ -101,36 +95,44 @@ class xuetangzaixian:
 
         element = self.driver.find_element_by_xpath("//div[@class='listScroll']/ul[1]/li[@class='title']")
         self.driver.execute_script("arguments[0].click();", element)  # 点击第一章章节标签
-        time.sleep(1)  # 加载等待
-        self.driver.find_element_by_xpath("//div[@class='listScroll']/ul[1]/li[2]").click()# 点击第一个视频
-        time.sleep(1)  # 加载等待
+
+        element = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//div[@class='listScroll']/ul[1]/li[2]"))
+        )
+        element.click()  # 点击第一个视频
 
         #跳转到第N个页面
-        self.goto_next_item(N)
-
+        self.goto_next_item(self.begin)
+        #循环刷视频
         while True:
             if (self.is_element_exist_by_xpath("//div[@class='lesson_right content_right']")):
-                print("\nthis is video")
+                print("\n------This is a video--------")
+                time.sleep(3)
+
                 video_speed = self.driver.find_element_by_xpath("//li[@data-speed='2'][@keyt='2.00']")
-                self.driver.execute_script("arguments[0].click();", video_speed)
+                self.driver.execute_script("arguments[0].click();", video_speed)  #ElementNotInteractableException
+
                 voice = self.driver.find_element_by_xpath(
                     "//xt-volumebutton[@class='xt_video_player_volume xt_video_player_common fr']/xt-icon")
                 self.driver.execute_script("arguments[0].click();", voice)
                 self.WaitVideo(1)
             elif (self.is_element_exist_by_xpath("//div[@class='courseAction_lesson_left lesson_left']")):
-                print("\nthis is paper")
+                print("\n---------This is paper---------")
 
             # 点击下一篇
             self.goto_next_item()
-            time.sleep(3)  # 加载等待
             if (self.have_next_item() == False):
                 break
 
     # 点击下一篇 N：点击几下
     def goto_next_item(self,N = 1):
         for i in range(N):
-            self.driver.find_element_by_xpath("//div[@class='control']/p[@class='next']").click()
-            time.sleep(3)  #加载等待
+            (WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//div[@class='control']/p[@class='next']"))
+            )).click()  # 点击下一个视频
+
+            # self.driver.find_element_by_xpath("//div[@class='control']/p[@class='next']").click()
+            # time.sleep(3)  #加载等待
 
     #判断是否还有下一 返回值：有：True 无：False
     def have_next_item(self):
@@ -184,8 +186,25 @@ class xuetangzaixian:
         except PermissionError:
             return False
 
+    def driver_init(self):
+        # 配置浏览器
+        opt = webdriver.ChromeOptions()  # 选择浏览器
+        opt.add_argument('--no-sandbox')  # 解决DevToolsActivePort文件不存在的报错
+        opt.add_argument('window-size=1920x3000')  # 设置浏览器分辨率
+        opt.add_argument('--disable-gpu')  # 谷歌文档提到需要加上这个属性来规避bug
+        opt.add_argument('--hide-scrollbars')  # 隐藏滚动条，应对一些特殊页面
+        opt.add_argument('blink-settings=imagesEnabled=false')  # 不加载图片，提升运行速度
+        # opt.add_argument('executable_path="./chromedriver"') # 手动指定使用的浏览器位置
+        if (self.visible == False):
+            opt.add_argument('--headless')  # 浏览器不提供可视化界面。Linux下如果系统不支持可视化不加这条会启动失败
+        # opt.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" # 手动指定使用的浏览器位置
+        self.driver = webdriver.Chrome(options=opt)  # 创建浏览器对象
+        self.driver.set_page_load_timeout(30)
+        self.driver.implicitly_wait(15)  # seconds
+
     #入口
     def start(self):
+        self.driver_init()
         print("start")
         print("open login page")
         self.openurl()
@@ -194,7 +213,6 @@ class xuetangzaixian:
         print("login successfully!")
         self.opencuorse()
         print("opencuorse page successful!")
-        self.save_cookie_json()
         self.watchvideo(self.begin)
         print("watchvideo finish")
         self.driver.close()
@@ -203,6 +221,7 @@ class xuetangzaixian:
 
     #快速登录
     def quicklogin(self):
+        self.driver_init()
         print("start")
         print("open login page")
         self.openurl()
