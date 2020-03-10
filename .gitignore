@@ -12,3 +12,4 @@ cookies.*
 test2.py
 chromedriver.exe
 geckodriver.log
+selenium-server-standalone-3.7.0.jar

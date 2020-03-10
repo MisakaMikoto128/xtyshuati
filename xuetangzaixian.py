@@ -39,8 +39,10 @@ class xuetangzaixian:
             self.driver.refresh()#记得刷新一下才会显示登录
             time.sleep(1)
         if(self.is_cookie_valid()):
-                return
+            print("Cookie is valid")
+            return
         else:
+            print("Cookie is invalid")
             self.pwdlogin()#密码登录
             time.sleep(2)#太快cookie没有加载完成，保存不了
             self.save_cookie_json()
@@ -55,7 +57,7 @@ class xuetangzaixian:
             self.username)  # 输入手机号
         self.driver.find_element_by_xpath("//input[@class='el-input__inner'][@placeholder='输入密码']").send_keys(
             self.password)  # 输入密码
-        time.sleep(1)  # 加载等待
+        # time.sleep(1)  # 加载等待
         self.driver.find_element_by_xpath("//div[@class='cliBtn buttonhoverblank ']").click()  # 点击登录按钮
         try:
             while (not (self.is_element_exist_by_xpath("//img[@class = 'img-circle el-popover__reference']"))):
@@ -91,7 +93,7 @@ class xuetangzaixian:
         #   该方法用来确认元素是否存在，如果存在返回flag=true，否则返回false
 
     def is_element_exist_by_xpath(self,element):
-        return EC.invisibility_of_element_located((By.XPATH,element))
+        return EC.invisibility_of_element_located((By.XPATH,element))(self.driver)
 
 
     #N:从第N个页面开始
@@ -110,12 +112,12 @@ class xuetangzaixian:
 
         #跳转到第N个页面
         self.goto_next_item(self.begin)
+        time.sleep(3)
+
         #循环刷视频
         while True:
-            if (self.is_element_exist_by_xpath("//div[@class='lesson_right content_right']")):
+            if (self.is_element_exist_by_xpath("//xt-videomask[@class='xt_video_player_mask cf']")):
                 print("\n------This is a video--------")
-                time.sleep(3)
-
                 video_speed = self.driver.find_element_by_xpath("//li[@data-speed='2'][@keyt='2.00']")
                 self.driver.execute_script("arguments[0].click();", video_speed)  #ElementNotInteractableException
 
@@ -123,7 +125,7 @@ class xuetangzaixian:
                     "//xt-volumebutton[@class='xt_video_player_volume xt_video_player_common fr']/xt-icon")
                 self.driver.execute_script("arguments[0].click();", voice)
                 self.WaitVideo(1)
-            elif (self.is_element_exist_by_xpath("//div[@class='courseAction_lesson_left lesson_left']")):
+            elif (self.is_element_exist_by_xpath("//div[@class='answer showUntil']")):
                 print("\n---------This is paper---------")
 
             # 点击下一篇
@@ -174,7 +176,8 @@ class xuetangzaixian:
 
     #判断载入的cookie对当前网站是否有效 返回值：True/False
     def is_cookie_valid(self):
-        if(self.is_element_exist_by_xpath("//span[@class='header-login--btnlogin']")):
+        # if(self.is_element_exist_by_xpath("//img[@class='img-circle el-popover__reference']")):
+        if (self.is_element_exist_by_xpath('//*[@id="app"]/div/div[1]/div/div[1]/div/div/div/div[1]/div[2]/div/span')):
             return False
         else:
             return True
@@ -211,6 +214,7 @@ class xuetangzaixian:
 
     #入口
     def run(self):
+
         self.driver_init()
         print("start")
         print("open login page")
