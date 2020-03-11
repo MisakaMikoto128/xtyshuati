@@ -14,6 +14,7 @@ import json
 # 会报异常。此时解决方法有两种，一种是重启浏览器，另一种是浏览器保持有两个tag页，当超时是切换到另一个tag（注意：tag页是很容易加载的）
 
 #全局有一个15s的implicit等待
+
 class xuetangzaixian:
     driver = None
     def __init__(self, loginurl, username, password, coursename,visible = True,begin = 1):
@@ -114,7 +115,7 @@ class xuetangzaixian:
         self.goto_next_item(self.begin)
         time.sleep(3)
 
-        #循环刷视频
+        #循环刷视频，可以把这里的阻塞改为多线程
         while True:
             if (self.is_element_exist_by_xpath("//xt-videomask[@class='xt_video_player_mask cf']")):
                 print("\n------This is a video--------")
@@ -204,17 +205,26 @@ class xuetangzaixian:
         opt.add_argument('--disable-gpu')  # 谷歌文档提到需要加上这个属性来规避bug
         opt.add_argument('--hide-scrollbars')  # 隐藏滚动条，应对一些特殊页面
         opt.add_argument('blink-settings=imagesEnabled=false')  # 不加载图片，提升运行速度
-        # opt.add_argument('executable_path="./chromedriver"') # 手动指定使用的浏览器位置
+        opt.add_argument('executable_path="./chromedriver"') # 手动指定使用的浏览器位置
         if (self.visible == False):
             opt.add_argument('--headless')  # 浏览器不提供可视化界面。Linux下如果系统不支持可视化不加这条会启动失败
         # opt.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" # 手动指定使用的浏览器位置
         self.driver = webdriver.Chrome(options=opt)  # 创建浏览器对象
-        self.driver.set_page_load_timeout(30)
+        self.driver.set_page_load_timeout(100)
+        self.driver.set_script_timeout(10)
         self.driver.implicitly_wait(15)  # seconds
+
+    # Lbug得到所有的课程和考试span父亲元素
+    def get_all_items_parent(self):
+        items = self.driver.find_elements_by_xpath("//span[@class = 'titlespan noScore']")
+        for i in range(len(items)):
+            print(items[i].text)
+            print(items[i].find_element_by_xpath("..").find_element_by_xpath("i[2]").get_attribute("class"))
+        return items
+
 
     #入口
     def run(self):
-
         self.driver_init()
         print("start")
         print("open login page")
@@ -237,5 +247,5 @@ class xuetangzaixian:
         print("open login page")
         self.openurl()
         print("login page successfully!")
-        self.pwdlogin()
+        self.login()
         print("login successfully!")

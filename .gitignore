@@ -8,7 +8,7 @@ debug.log
 cookie.*
 cookies.*
 学堂在线.py
-1.html
+*.html
 test2.py
 chromedriver.exe
 geckodriver.log
