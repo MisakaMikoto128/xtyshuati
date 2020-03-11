@@ -1,7 +1,7 @@
 .idea
 __pycache__
 p.py
-test1.py
+test?.py
 start.py
 learn.py
 debug.log
