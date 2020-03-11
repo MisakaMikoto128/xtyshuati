@@ -19,9 +19,9 @@ class xuetangzaixian:
     driver = None
     def __init__(self, loginurl, username, password, coursename,visible = True,begin = 1):
         self.loginurl = loginurl
-        self.username = username
-        self.password = password
-        self.coursename = coursename
+        self._username = username
+        self._password = password
+        self._coursename = coursename
         self.visible = visible
         self.begin = begin
 
@@ -34,19 +34,19 @@ class xuetangzaixian:
 
     #登录
     def login(self,cookiename="cookies.json"):
-        if(self.is_cookiefile_valid(cookiename)):
-            self.load_cokie()
+        if(self._is_cookiefile_valid(cookiename)):
+            self._load_cokie()
             time.sleep(1)
             self.driver.refresh()#记得刷新一下才会显示登录
             time.sleep(1)
-        if(self.is_cookie_valid()):
+        if(self._is_cookie_valid()):
             print("Cookie is valid")
             return
         else:
             print("Cookie is invalid")
             self.pwdlogin()#密码登录
             time.sleep(2)#太快cookie没有加载完成，保存不了
-            self.save_cookie_json()
+            self._save_cookie_json()
 
 
     #密码登录
@@ -55,9 +55,9 @@ class xuetangzaixian:
         self.driver.find_element_by_xpath("//span[@class='header-login--btnlogin']").click()  # 点击登录按钮
         self.driver.find_element_by_xpath("//div[@class='scavengTip']/img").click()  # 账号密码登录
         self.driver.find_element_by_xpath("//input[@class='el-input__inner'][@placeholder='输入手机号']").send_keys(
-            self.username)  # 输入手机号
+            self._username)  # 输入手机号
         self.driver.find_element_by_xpath("//input[@class='el-input__inner'][@placeholder='输入密码']").send_keys(
-            self.password)  # 输入密码
+            self._password)  # 输入密码
         # time.sleep(1)  # 加载等待
         self.driver.find_element_by_xpath("//div[@class='cliBtn buttonhoverblank ']").click()  # 点击登录按钮
         try:
@@ -79,10 +79,10 @@ class xuetangzaixian:
         # self.driver.find_element_by_class_name('list').find_element_by_xpath('li[1]').click()  # 点击我的课程
         # driver.find_element_by_xpath("//div[@class='singleCourseMin']/div[@class='singleCourseBox']/div[@class='singleCourseMin']/div/div[1]").click()
 
-        self.driver.find_element_by_xpath("//div[text()='{}']".format(self.coursename)).click()  # 点击课程
+        self.driver.find_element_by_xpath("//div[text()='{}']".format(self._coursename)).click()  # 点击课程
 
     #等待视频播放
-    def WaitVideo(self,fre=0.5, timeout=10):
+    def __WaitVideo(self, fre=0.5, timeout=10):
         while True:
             now = self.driver.find_element_by_xpath(
                 "//xt-inner[@class='xt_video_player_controls_inner']/xt-progress/xt-progressinner/xt-currenttime").get_attribute(
@@ -125,7 +125,7 @@ class xuetangzaixian:
                 voice = self.driver.find_element_by_xpath(
                     "//xt-volumebutton[@class='xt_video_player_volume xt_video_player_common fr']/xt-icon")
                 self.driver.execute_script("arguments[0].click();", voice)
-                self.WaitVideo(1)
+                self.__WaitVideo(1)
             elif (self.is_element_exist_by_xpath("//div[@class='answer showUntil']")):
                 print("\n---------This is paper---------")
 
@@ -157,13 +157,13 @@ class xuetangzaixian:
         self.begin = N
 
     # 用于保存Cookie信息
-    def save_cookie_json(self,cookiename="cookies.json"):
+    def _save_cookie_json(self, cookiename="cookies.json"):
         with open(cookiename, 'w') as cookief:
             # 将cookies保存为json格式
             cookief.write(json.dumps(self.driver.get_cookies()))
 
     #z载入已经保存的Cookie信息
-    def load_cokie(self,cookiename="cookies.json"):
+    def _load_cokie(self, cookiename="cookies.json"):
         with open(cookiename, 'r') as cookief:
             # 使用json读取cookies 注意读取的是文件 所以用load而不是loads
             cookieslist = json.load(cookief)
@@ -176,7 +176,7 @@ class xuetangzaixian:
             self.driver.add_cookie(cookie)
 
     #判断载入的cookie对当前网站是否有效 返回值：True/False
-    def is_cookie_valid(self):
+    def _is_cookie_valid(self):
         # if(self.is_element_exist_by_xpath("//img[@class='img-circle el-popover__reference']")):
         if (self.is_element_exist_by_xpath('//*[@id="app"]/div/div[1]/div/div[1]/div/div/div/div[1]/div[2]/div/span')):
             return False
@@ -184,7 +184,7 @@ class xuetangzaixian:
             return True
 
     #判断是否保存了cookie文件  False:文件不存在/文件为空
-    def is_cookiefile_valid(self, cookiename="cookies.json"):
+    def _is_cookiefile_valid(self, cookiename="cookies.json"):
         try:
             f = open(cookiename)
             if(os.path.getsize(cookiename) == 0):  #判断文件是否为空
@@ -197,7 +197,7 @@ class xuetangzaixian:
         except PermissionError:
             return False
 
-    def driver_init(self):
+    def _driver_init(self):
         # 配置浏览器
         opt = webdriver.ChromeOptions()  # 选择浏览器
         opt.add_argument('--no-sandbox')  # 解决DevToolsActivePort文件不存在的报错
@@ -215,7 +215,7 @@ class xuetangzaixian:
         self.driver.implicitly_wait(15)  # seconds
 
     # Lbug得到所有的课程和考试span父亲元素
-    def get_all_items_parent(self):
+    def _get_all_items_parent(self):
         items = self.driver.find_elements_by_xpath("//span[@class = 'titlespan noScore']")
         for i in range(len(items)):
             print(items[i].text)
@@ -225,7 +225,7 @@ class xuetangzaixian:
 
     #入口
     def run(self):
-        self.driver_init()
+        self._driver_init()
         print("start")
         print("open login page")
         self.openurl()
@@ -242,7 +242,7 @@ class xuetangzaixian:
 
     #快速登录
     def quicklogin(self):
-        self.driver_init()
+        self._driver_init()
         print("start")
         print("open login page")
         self.openurl()
